@@ -1,0 +1,512 @@
+{% extends "base.html" %}
+
+{% block css_link %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}"/>
+{% endblock %}
+{% block css %}
+.am-tabs-nav li {position: relative;z-index: 1;}
+.am-tabs-nav .am-icon-close {position: absolute;top: 0;right: 10px;color: #888;cursor: pointer;z-index: 100;}
+.am-tabs-nav .am-icon-close:hover {color: #333;}
+.am-tabs-nav .am-icon-close ~ a {padding-right: 25px!important;}
+
+.am-btn{padding:5px;border-radius:5px;}
+.operation button{padding:7px 10px;}
+form .required{color:red;}
+.mt20{margin-top:20px;}
+.hide{display:none;}
+{% endblock %}
+
+
+{% block content %}
+<!-- sidebar start -->
+  <div class="admin-sidebar am-offcanvas" id="admin-offcanvas">
+    <div class="am-offcanvas-bar admin-offcanvas-bar">
+      <ul class="am-list admin-sidebar-list">
+        <li id="team"><a href="javascript: init_team()"><span class="am-icon-bars"></span>项目组管理</a></li>
+        <li id="user"><a href="javascript:user_init()"><span class="am-icon-user"></span>用户管理</a></li>
+      </ul>
+
+      <div class="am-panel am-panel-default admin-sidebar-panel">
+        <div class="am-panel-bd">
+          <p><span class="am-icon-tag"></span> wiki</p>
+          <p>Welcome!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <a href="#" class="am-show-sm-only admin-menu" data-am-offcanvas="{target:'#admin-offcanvas'}" style="z-index:999;">
+  <span class="am-icon-btn am-icon-th-list"></span>
+  </a>
+  <!-- sidebar end -->
+<div class="admin-content" id="admin-content">
+    <div class="am-tabs" data-am-tabs="{noSwipe: 1}" id="doc-tab-demo-1">
+      <ul class="am-tabs-nav am-nav am-nav-tabs">
+        <li class="am-active" id="main-team"><a href="javascript:void(0)">项目组管理</a></li>
+      </ul>
+
+      <div class="am-tabs-bd">
+        <div class="am-tab-panel am-active" id="team-content">
+            <button type="button" class="am-btn am-btn-primary am-radius create" data-type="team">+新建</button>
+            <ul class="am-list" id="listview">
+            </ul>
+        </div>
+      </div>
+    </div>
+</div>
+<iframe name='post' id="post" style='display:none;'></iframe>
+<!-- modal start -->
+<!-- modal end -->
+<!-- tempalte start -->
+<div id="create-team-t" style="display:none;">
+    <form class="am-g am-margin-top" method="post" action="{{ url_for('admin.create_or_update_team')}}" target="post">
+          {{ teamform.csrf_token }}
+          <div class="am-u-sm-4 am-u-md-2 am-text-right">项目组名称</div>
+          <div class="am-u-sm-8 am-u-md-10">
+            {{ teamform.id(type='hidden')}}
+            {{ teamform.name(placeholder='请输入名称',required='required')}}<span class="required">*</span>
+          </div>
+          <div class="am-u-sm-8 am-u-md-10 operation" style="margin-top:45px;">
+            <button type="submit" class="am-btn am-btn-primary am-btn-xs submit">保存</button>
+            <button type="button" class="am-btn am-btn-primary am-btn-xs cancel" style="margin-left:15px;">取消</button>
+          </div>
+    </form>
+</div>
+<div id="create-user-t" style="display:none;">
+    <form class="am-g am-margin-top" method="post" action="{{ url_for('admin.create_user')}}" target="post">
+          {{ userform.csrf_token }}
+          <input id="id" name="id" type="hidden" value="">
+          <div class="am-u-sm-4 am-u-md-2 am-text-right mt20">姓名</div>
+          <div class="am-u-sm-8 am-u-md-10 mt20">
+            {{ userform.name(placeholder='请输入名称',required='required')}}<span class="required">*</span>
+          </div>
+          <div class="am-u-sm-4 am-u-md-2 am-text-right mt20">登录账号</div>
+          <div class="am-u-sm-8 am-u-md-10 mt20">
+            {{ userform.account(placeholder='请输入登录账号',required='required')}}<span class="required">*</span>
+          </div>
+          <div class="am-u-sm-4 am-u-md-2 am-text-right mt20">初始密码</div>
+          <div class="am-u-sm-8 am-u-md-10 mt20">
+            {{ userform.password(value='123456',required='required')}}<span class="required">*</span>
+          </div>
+          <div class="am-u-sm-4 am-u-md-2 am-text-right mt20">项目组</div>
+          <div class="am-u-sm-8 am-u-md-10 mt20">
+            <select id="form_team" name="team"></select>
+          </div>
+          <div class="am-u-sm-4 am-u-md-2 am-text-right mt20">汇报对象</div>
+          <div class="am-u-sm-8 am-u-md-10 mt20">
+              <div id="leader1" style="display:inline-block;border:1px solid gray;"></div><button type="button" id="choose_leader" 
+              onclick="$('#userlist').modal()">选择</button>（可多选） 
+              <input type="hidden" name="leader" id="leader"/> 
+         </div>
+          <div class="am-u-sm-4 am-u-md-2 am-text-right mt20">权限</div>
+          <div class="am-u-sm-8 am-u-md-10 mt20">
+            <input type="radio" name="permission" value="0" checked>普通用户
+            <input type="radio" name="permission" value="1">管理员
+          </div>
+          <div class="am-u-sm-8 am-u-md-10 operation" style="margin-top:45px;">
+            <button type="submit" class="am-btn am-btn-primary am-btn-xs submit">保存</button>
+            <button type="button" class="am-btn am-btn-primary am-btn-xs cancel" style="margin-left:15px;">取消</button>
+          </div>
+    </form>
+</div>
+
+<div id="update-user-t" style="display:none;">
+    <form class="am-g am-margin-top" method="post" action="{{ url_for('admin.update_user')}}" target="post">
+          {{ userform.csrf_token }}
+          <input id="id" name="id" type="hidden" value="">
+          <div class="am-u-sm-4 am-u-md-2 am-text-right mt20">姓名</div>
+          <div class="am-u-sm-8 am-u-md-10 mt20">
+            {{ userform.name(placeholder='请输入名称',required='required')}}<span class="required">*</span>
+          </div>
+          <div class="am-u-sm-4 am-u-md-2 am-text-right mt20">登录账号</div>
+          <div class="am-u-sm-8 am-u-md-10 mt20">
+            {{ userform.account(placeholder='请输入登录账号',required='required')}}<span class="required">*</span>
+          </div>
+          <div class="am-u-sm-4 am-u-md-2 am-text-right mt20">项目组</div>
+          <div class="am-u-sm-8 am-u-md-10 mt20">
+            <select id="form_team1" name="team"></select>
+          </div>
+          <div class="am-u-sm-4 am-u-md-2 am-text-right mt20">权限</div>
+          <div class="am-u-sm-8 am-u-md-10 mt20">
+            <input type="radio" name="permission" value="0" checked>普通用户
+            <input type="radio" name="permission" value="1">管理员
+          </div>
+          <div class="am-u-sm-8 am-u-md-10 operation" style="margin-top:45px;">
+            <button type="submit" class="am-btn am-btn-primary am-btn-xs submit">更新</button>
+            <button type="button" class="am-btn am-btn-primary am-btn-xs cancel" style="margin-left:15px;">取消</button>
+          </div>
+    </form>
+    <button type="button" class="am-btn am-btn-success am-btn-xs" onclick="javascript:resetPassword(this)">重置密码</button><br><br>
+    汇报对象<div id="leader1" style="display:inline-block;border:1px solid gray;"></div><button type="button" id="choose_leader" 
+              onclick="$('#userlist').modal()">选择</button>（可多选）
+              <input type="hidden" name="leader" id="leader"/> 
+    <button type="button" class="am-btn am-btn-success am-btn-xs" onclick="javascript:changeLeader(this)">修改</button>
+</div>
+
+<!-- tempalte end -->
+<div class="am-modal am-modal-no-btn" tabindex="-1" id="userlist">
+  <div class="am-modal-dialog">
+    <div class="am-modal-hd">选择汇报人（可多选）
+      <a href="javascript: void(0)" class="am-close am-close-spin" data-am-modal-close>&times;</a>
+    </div>
+    <div class="am-modal-bd">
+        <select multiple="multiple" style="height:250px;width:200px;">
+            {%for i in user%}
+            <option value="{{i.id}}">{{i.username}}</option>
+            {%endfor%}
+        </select><br><br>
+        <input type="button" value="确定" id="confirmchoose"/>
+        <input type="button" value="取消" onclick="$('#userlist').modal('close')"/>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/util.js') }}"></script>
+<script> 
+var csrftoken = "{{ csrf_token() }}";
+$.ajaxSetup({
+    beforeSend: function(xhr, settings) {
+        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+            xhr.setRequestHeader("X-CSRFToken", csrftoken)
+        }
+    }
+})
+/*********************************************************************/
+//重置密码
+function resetPassword(obj){
+    var form = $(obj).prev()[0];
+    var account = form.name.value;
+    var id = form.id.value;
+    if(confirm("确定要重置用户"+account+"的密码？")){
+        $.getJSON("/admin/user/resetpassword/"+id,function(data){
+            if(data.code==200){
+                alert("密码已重置为123456")
+            }
+        })
+    }
+}    
+//修改汇报人 
+function changeLeader(obj){
+    var value = $(obj).prev()[0].value.toString()||'null';
+    var id = $(obj).siblings('form')[0].id.value;
+    console.log(value)
+    if(value){
+        var r=confirm("确定更改汇报人?");
+        if(r==true){
+            $.ajax({
+              url:  "/admin/user/changeLeader",
+              type: 'post',
+              dataType: 'json',
+              data: {val:value,uid:id},
+            })
+            .done(function(data) {
+                if(data.code==200){
+                    alert('修改成功'); 
+                }
+            })
+            .fail(function(data) {   
+                alert('操作失败，请重试...');      
+            });
+        }     
+    }
+}
+    
+         
+$("#confirmchoose").click(function(){
+    var $select = $(this).siblings('select')
+    var val = $select.val()||'';
+    var $selected = $select.find('option:selected');
+    var text = [];
+    $selected.each(function(){
+        text.push($(this).text());
+    });
+    $(".am-tabs-bd #leader1").text(text.join(','));
+    $(".am-tabs-bd #leader").val(val);
+    $('#userlist').modal('close');
+})
+    
+//修复选项卡切换bug
+$("#doc-tab-demo-1").delegate(".am-tabs-nav>li", "click", function(){
+    var index = $(this).parent().children('li').index($(this)); 
+    $(this).siblings().removeClass('am-active');
+    $(this).addClass('am-active');
+    //console.log(index); 
+    $(".am-tabs-bd>div.am-active.am-in").removeClass("am-active").removeClass("am-in");
+    $(".am-tabs-bd>div").eq(index).addClass("am-active").addClass("am-in");
+    
+})
+
+function choose_selected_user(){
+     var $checked = $("#doc-modal-userlist input[type=checkbox]:checked").parent().clone()
+     $("#choose_leader").before($checked);
+}
+//刷新用户列表
+function refresh(){
+    var value = $('#pagination').val();
+    if(value){
+        getuser(value);
+    }
+}
+
+function iframeOnload(){ 
+     var doc;
+     if (document.all){ // IE 
+      doc = this.document; 
+     }else{ // 标准
+      doc = this.contentDocument; 
+     }
+     var jsonstr = doc.body.innerHTML;
+     var json = $.parseJSON(jsonstr);
+     if(json.code==200&&json.op){
+         $('#'+json.op+' .am-icon-close').click();
+         var type = json.op.split('-')[1];
+         if(type=="team"){
+             init_team();
+         }else if(type=="user"){
+             var value = $('#pagination').val();
+             getuser(value);
+         }
+     }else if(json.code==500){
+         alert('服务器错误，请重试')    
+     }else{
+         alert(json.message)  
+     }  
+ }  
+document.getElementById("post").onload=iframeOnload;
+
+function init_team(){
+    $.getJSON("{{url_for('admin.team')}}",function(data){
+        var html_arr = [],info_list = data.data;
+        for(var i=0,l=info_list.length;i<l;i++){
+            var t = '<li style="padding:10px;">\
+                      <span class="id" style="display:none;">[id]</span>\
+                      <span  class="name am-text-truncate" style="display:inline-block;width:350px;">[name]</span>\
+                      <span class="update am-btn am-btn-warning am-btn-xs" data-type="team">编辑</span>\
+                      <span class="delete am-btn am-btn-danger am-btn-xs team" style="margin-right:50px;">删除</span>\
+                   </li>'
+            if(info_list[i][1]!='null'){
+                html_arr.push(format(t,{id:info_list[i][0],name:info_list[i][1]}));
+            }
+            html = html_arr.join('')
+        }
+        $("#listview").html(html)
+        $("#main-team").click();
+    })
+}
+init_team();
+$(function() {
+    var $tab = $('#doc-tab-demo-1');
+    var $nav = $tab.find('.am-tabs-nav');
+    var $bd = $tab.find('.am-tabs-bd');
+    var exist_tab = [];
+    //增加tab选项卡
+    function addTab(id,tag_name,body) {
+      var nav = '<li id="'+id+'"><span class="am-icon-close"></span>' +
+        '<a href="javascript: void(0)">' + tag_name + '</a></li>';
+      var content = '<div class="am-tab-panel">' + body + '</div>'; 
+      $nav.append(nav);
+      $bd.append(content);
+      $tab.tabs('refresh');
+    }
+
+    window.getuser = function(index){
+        var html = '<button type="button" class="am-btn am-btn-primary\
+                                am-radius create" data-type="user">+新建</button>\
+                      <button type="button" class="am-btn am-btn-warning am-radius" style="margin-left:35px;" onclick="refresh()">刷新</button>\
+                                <ul class="am-list" id="listview-user">\
+                                <div class="am-scrollable-horizontal">\
+  <table class="am-table am-table-bordered am-table-striped am-text-nowrap">\
+    <thead><tr><th>NO</th><th>姓名</th><th>账号</th><th>项目组</th><th>汇报对象</th>\
+    <th>权限</th><th>操作</th></tr></thead>\<tbody id="user_list""></tbody></table>\
+      <ul class="am-pagination am-pagination-select" style="height:36px;">\
+        <li class="am-pagination-select"><select id="pagination" style="background:#339933;color:#fff;"></select></li></ul></div>'
+            
+            $('.am-in').html(html);
+            $.getJSON("/admin/user/"+index,function(data){
+                var pagination = '';
+                for(var i=1;i<data.pages+1;i++){
+                    if(i==index){
+                        pagination += '<option value="'+i+'" class="" selected>'+i+' / '+data.pages+'</option>'
+                    }else{
+                        pagination += '<option value="'+i+'" class="">'+i+' / '+data.pages+'</option>'
+                    }
+                }
+                $("#pagination").html(pagination);
+                $('#pagination').change(function(){
+                    var value = $(this).children('option:selected').val();
+                    getuser(value);
+                });
+                var list = data.data,html = [];
+                var permission = {0:'普通',1:'管理员'}
+                for(var i=0,l=list.length;i<l;i++){
+                    var json_str = {name:list[i][1],account:list[i][2],leader:list[i][5],
+                                    permission:permission[list[i][3].toString()],team:list[i][4],
+                                    index:list[i][6],id:list[i][0]
+                                   }
+                    var temp = format('<tr><th class="id hide">[id]</th><th>[index]</th>\
+                    <th class="name">[name]</th><th class="account">[account]</th><th class="team">[team]</th>\
+                    <th class="leader">[leader]</th><th class="permission">[permission]</th><th><span class="update am-btn am-btn-warning am-btn-xs" date-value=[id] data-type="user">编辑</span> <span class="delete am-btn am-btn-danger am-btn-xs user"\
+                    style="margin-right:50px;" date-value=[id]>删除</span></th></tr>',json_str)   
+                    html.push(temp); 
+                }
+                var htmlstr = html.join('');
+                $('#user_list').html(htmlstr);
+                $("#main-user").click();
+            });
+    }
+
+    //显示用户管理主页
+    window.user_init = function(){
+        if(exist_tab.indexOf('main-user')==-1){
+            addTab('main-user','用户管理','')
+            $tab.tabs('open',$("#main-user"));
+            getuser(1);
+            exist_tab.push('main-user');
+        }else{
+            $("#main-user").click();
+            console.log('main-user click')
+        }    
+    }
+    
+    //新建记录
+    $(".admin-content").delegate('.create','click', function() {
+        var type = $(this).data('type');
+        var tab_name = {team:'添加项目组',user:'添加用户'}
+        var  id = 'create-'+type
+        if(exist_tab.indexOf(id)==-1){
+            addTab(id,tab_name[type],'')
+            $tab.tabs('open',$("#"+id));
+            $('.am-in').html($('#'+id+'-t').html())
+            exist_tab.push(id);
+            //新建用户 同步项目组选择列表
+            if(type=='user'){
+                $.getJSON("{{url_for('admin.team')}}",function(data){
+                    var team = data.data,html = [];
+                    for(var i=0;i<team.length;i++){
+                        html.unshift('<option value="'+team[i][0]+'">'+team[i][1]+'</option>')    
+                    }
+                    $('#form_team').html(html.join(''))
+                });
+            }   
+        }else{
+            $tab.tabs('open',$("#"+id));
+            $("#"+id).click();
+        }
+        $tab.tabs('refresh');
+    });
+
+    // 移除标签页
+    $nav.on('click', '.am-icon-close', function() {
+      var $item = $(this).closest('li');
+      var index = $nav.children('li').index($item);
+
+      $item.remove();
+      console.log($item.attr("id"))
+      exist_tab.remove($item.attr("id"))
+      console.log(exist_tab)
+      $bd.find('.am-tab-panel').eq(index).remove();
+      $tab.tabs('open', index > 0 ? index - 1 : index + 1);
+      $tab.tabs('refresh');
+    });
+
+    //取消 操作
+    $(".admin-content").delegate(".cancel", "click", function(){
+        var $item = $(this).parent().parent().parent();
+        var index = $("div .am-tab-panel").index($item);
+        $("#doc-tab-demo-1 li").eq(index).find(".am-icon-close").click()
+        $tab.tabs('refresh');
+        //$(".am-icon-close").click()
+    })
+     //删除记录
+     $(".admin-content").delegate(".delete", "click", function(){
+        var that = $(this);
+        if(that.hasClass("team")){
+            if(confirm("确定要删除？")){
+                var id = $(this).siblings('.id').text();
+                var url = "{{url_for('admin.team_del',team_id=0)}}";
+                $.getJSON(url.slice(0,-1)+id,function(){
+                    that.parent().remove();
+                })
+            }
+        }else if(that.hasClass("user")){
+            var id = $(this).parent().siblings('.id').text();
+            if(confirm("删除后该人员所有信息将丢失，确认删除?")){
+                $.getJSON("/admin/user/del/"+id,function(){
+                    that.parent().parent().remove();
+                })
+            }
+        }
+    })
+    //编辑记录
+    $(".admin-content").delegate(".update", "click", function(){
+        var type = $(this).data('type');
+        var that = $(this);
+        if(type=="team"){
+            var id = $(this).siblings('.id').text();
+            var name = $(this).siblings('.name').text();
+            var account = $(this).siblings('.account').text();
+            if(exist_tab.indexOf('update-team')==-1){
+                    addTab('update-team','编辑项目组','')
+                    $tab.tabs('open',$("#update-team"));
+                    $('.am-in').html($('#create-team-t').html())
+                    exist_tab.push('update-team');
+            }else{
+                $tab.tabs('open',$("#update-team"));
+                $('.am-in').html($('#create-team-t').html())
+            }
+            $('.am-in #id').val(id)
+            $('.am-in #name').val(name)
+        }else if(type=="user"){
+             var temp = {'普通':0,'管理员':1}
+             var $parent = $(this).parent();
+             var id = $parent.siblings('.id').text();
+             var name = $parent.siblings('.name').text();
+             var account = $parent.siblings('.account').text();
+             var team_name = $parent.siblings('.team').text();
+             var leader = $parent.siblings('.leader').text();
+             var permission = temp[$parent.siblings('.permission').text()];
+             if(exist_tab.indexOf('update-user')==-1){
+                    $.getJSON("{{url_for('admin.team')}}",function(data){
+                        var team = data.data,html = [];
+                        for(var i=0;i<team.length;i++){
+                            if(team[i][1]==team_name){
+                                html.unshift('<option value="'+team[i][0]+'" selected>'+team[i][1]+'</option>') 
+                            }else{
+                                html.unshift('<option value="'+team[i][0]+'">'+team[i][1]+'</option>')   
+                            }
+                        }
+                        $('#form_team1').html(html.join(''))
+                    });
+                    addTab('update-user','编辑用户','')
+                    $tab.tabs('open',$("#update-user"));
+                    $('.am-in').html($('#update-user-t').html())
+                    exist_tab.push('update-user');
+            }else{
+                $tab.tabs('open',$("#update-user"));
+                $('.am-in').html($('#update-user-t').html())
+            }
+            console.log(permission)
+            $('.am-in #id').val(id);
+            $('.am-in #name').val(name);
+            $('.am-in #account').val(account);
+            $(".am-in input[value="+permission+"]").attr("checked",true);
+            $('.am-in #leader1').text(leader);
+        }
+        $tab.tabs('refresh');
+    })
+   
+    $('#choose_leader').on('click', function() {
+        $('#doc-modal-userlist').modal();
+    });
+    
+    
+});
+
+</script>
+{% endblock %}
+
+

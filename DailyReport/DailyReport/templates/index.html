@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block css %}
+.op{display:inline-block;margin-right:10px;float:right;background:#64BFF0;color:#fff;font-size:13px;font-weight:400;padding:3px 6px;}
+.updateDailyReport{background:#FF6633;}
+#createDailyReport input{padding:4px 8px;margin-top:15px;}
+#updateDailyReport input{padding:4px 8px;margin-top:15px;}
+.am-accordion-default{-webkit-box-shadow:0 0 0 0px rgba(0,0,0,.1);}
+.date{font-weight:bold;font-size:18px;}
+{% endblock %}  
+
+{% block content %}
+<div class="admin-content" style="width:75%;margin:0 auto;">
+    <div style="width:90%;margin:20px auto;">
+        <select data-am-selected="{btnWidth: '7rem', btnSize: 'sm', btnStyle: 'success',}" id="select_year">
+            {%for i in range(2015,year+1)%}
+            <option value="{{i}}" >{{i}}年</option>
+            {%endfor%}
+        </select>
+        <select data-am-selected="{btnWidth: '17rem', btnSize: 'sm', btnStyle: 'success',maxHeight: 500}" id="select_week">
+        </select>
+        <button class="am-btn am-btn-secondary" style="display:inline-block;padding:5px 8px;" id="search">
+            查 询
+        </button>
+    </div>
+    <section  data-am-widget="accordion" class="am-accordion am-accordion-default" data-am-accordion='{ "multiple": true }' id="dailyReportList"></section> 
+</div>
+<!-- modal createDailyReport start -->
+<div class="am-modal am-modal-no-btn" tabindex="-1" id="createDailyReport" style="border:8px solid #C0C0C0;">
+  <div class="am-modal-dialog">
+    <div class="am-modal-hd"><span style="font-weight:bold;" class="date"></span>
+      <a href="javascript: void(0)" class="am-close am-close-spin" data-am-modal-close>&times;</a>
+    </div>
+    <div class="am-modal-bd">
+    <form action="{{ url_for('user.craete_dailyReport')}}" method="post">
+      <input type="hidden" name="uid" value="{{uid}}"/>
+      <input type="hidden" name="date" value=""/>
+      <textarea name="content" rows="11" style="width:95%;" placeholder="请填写今日工作总结"></textarea>
+      <input type="button" value="保&nbsp存" class="am-btn am-btn-secondary createDailyReport"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <input type="button" value="取&nbsp消" class="am-btn am-btn-secondary" onclick="$('#createDailyReport').modal('close')"/>
+    </form>
+    </div>
+  </div>
+</div>
+<!-- modal end -->
+<!-- modal updateDailyReport start -->
+<div class="am-modal am-modal-no-btn" tabindex="-2" id="updateDailyReport" style="border:8px solid #C0C0C0;">
+  <div class="am-modal-dialog">
+    <div class="am-modal-hd"><span style="font-weight:bold;" class="date"></span>
+      <a href="javascript: void(0)" class="am-close am-close-spin" data-am-modal-close>&times;</a>
+    </div>
+    <div class="am-modal-bd">
+    <form action="{{ url_for('user.update_dailyReport')}}" method="post">
+      <input type="hidden" name="id" value=""/>
+      <textarea id="editor1" name="content" rows="11" style="width:95%;" placeholder="不能为空"></textarea>
+      <input type="button" value="更&nbsp新" class="am-btn am-btn-secondary updateDailyReport"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <input type="button" value="取&nbsp消" class="am-btn am-btn-secondary" onclick="$('#updateDailyReport').modal('close')"/>
+    </form>
+    </div>
+  </div>
+</div>
+<!-- modal end -->
+{% raw %}
+<script id="list_template" type="text/x-dot-template">
+    {{~it:value:index}}
+    <dl class="am-accordion-item am-active" class="dl" style="margin-bottom:30px;border:1px solid #DEDEDE;">
+        <dt class="am-accordion-title">
+          <span class="id am-hide">{{!value.id}}</span>
+          <span class="date">{{!value.date}}</span>&nbsp;&nbsp;
+          <span style="color:#646464;" class="week">(周{{!value.week}})</span>
+          <span class="op {{!value.class}}">{{!value.text}}工作记录</span>
+        </dt>
+        {{? value.content }}
+        <dd class="am-accordion-bd am-collapse am-in">
+          <pre style="margin:0;border:none;" class="am-accordion-content" id="{{=value.date}}">{{!value.content}}</pre>
+        </dd>
+        {{?}}
+    </dl>
+    {{~}}
+</script>
+{% endraw %}
+
+{% endblock %}
+
+
+{% block js %}
+<script src="{{ url_for('static', filename='js/util.js') }}"></script>
+<script>
+var csrftoken = "{{ csrf_token() }}";
+$.ajaxSetup({
+    beforeSend: function(xhr, settings) {
+        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+            xhr.setRequestHeader("X-CSRFToken", csrftoken)
+        }
+    }
+})
+/*********************************************************************/
+var weeklist_init = function(year){
+    $.getJSON("/user/getDatesOfWeek/"+year,function(resp){
+        var data = resp.data,html = [];
+        for(var i=0,l=data.length;i<l;i++){
+            var temp = '<option value="'+data[i].index+'">'+data[i].data+'</option>';
+            html.unshift(temp);
+        }
+        var html_str = html.join('');
+        var $selected = $('#select_week')
+        $selected.html(html_str);
+        if (!$.AMUI.support.mutationobserver) {
+          $selected.trigger('changed.selected.amui');
+        }
+    });
+}
+//初始化日报列表
+var list_init = function(year,week){
+    $.getJSON("{{ url_for('user.getDailyReport')}}"+"?year="+year+"&index="+week,function(data){
+        var week = ['一','二','三','四','五','六','日']
+        var list = data.data,new_data = [];
+        for(var i=0,l=list.length;i<l;i++){
+            if(list[i].content){
+                list[i]['class'] = 'updateDailyReport';
+                list[i]['text'] = '编辑';
+            }else{
+                list[i]['class'] = 'newDailyReport';
+                list[i]['text'] = '新建';
+            }
+            list[i]['week'] = week[list[i]['week']-1]
+            new_data.unshift(list[i])
+        }
+        var evalText = doT.template($("#list_template").text());
+        $("#dailyReportList").html(evalText(new_data));
+        $.AMUI.accordion.init();
+        $('#dailyReportList .newDailyReport').unbind('click').click(function(e){
+            e.stopPropagation();
+            var date = $(this).siblings('.date').text();
+            var week = $(this).siblings('.week').text();
+            $('#createDailyReport .date').html(date+'&nbsp;&nbsp'+week);
+            var form = $('#createDailyReport form')[0];
+            form.date.value = date;
+            form.content.value = '一、工作内容\n\n二、存在问题\n\n三、重要交付物';
+            var width = document.body.clientWidth;
+            $('#createDailyReport').modal({closeViaDimmer:false,width:width*0.65,height:400});
+        });
+        $('#dailyReportList .updateDailyReport').unbind('click').click(function(e){
+            e.stopPropagation();
+            var id = $(this).siblings('.id').text();
+            var date = $(this).siblings('.date').text();
+            var week = $(this).siblings('.week').text();
+            $('#updateDailyReport .date').html(date+'&nbsp;&nbsp'+week);
+            var content = $('#'+date).text();
+            $('#updateDailyReport form')[0].id.value = id;
+            $('#updateDailyReport form')[0].content.value = content;
+            var width = document.body.clientWidth;
+            $('#updateDailyReport').modal({closeViaDimmer:false,width:width*0.65,height:400});
+            return;
+        });
+    });
+}
+list_init({{year}},{{week_total}});
+weeklist_init({{year}});
+//新建日报
+$("#createDailyReport .createDailyReport").click(function(){
+    var that = this;
+    var form= $(this).parent()[0];
+    var uid = form.uid.value;
+    var content = form.content.value;
+    var date = form.date.value;
+    if(!content){
+        alert('内容不能为空');
+        form.content.focus();
+        return;
+    }
+    $.ajax({
+          url:  "{{ url_for('user.craete_dailyReport')}}",
+          type: 'POST',
+          dataType: 'json',
+          data: {uid:uid,content:content,type:1,date:date},
+    })
+    .done(function(data) {
+        if(data.code==200){
+            $('#createDailyReport').modal('close')
+            form.content.value = '';
+            var year = $("#select_year").val();
+            var week = $("#select_week").val();
+            list_init(year,week);
+        }else{
+            alert('操作失败，请重试...');
+        }
+    })
+    .fail(function(data) {   
+        if(data.code==200){
+            alert('您已经提交过');
+        }else{
+            alert('操作失败，请重试...');
+        }       
+    });
+    
+});
+//编辑日报
+$("#updateDailyReport .updateDailyReport").click(function(){
+    var that = this;
+    var form= $(this).parent()[0];
+    var id = form.id.value;
+    var content = form.content.value;
+    if(!content){
+        alert('内容不能为空');
+        form.content.focus();
+        return
+    }
+    $.ajax({
+          url:  "{{ url_for('user.update_dailyReport')}}",
+          type: 'POST',
+          dataType: 'json',
+          data: {id:id,content:content},
+    })
+    .done(function(data) {
+        console.log(data)
+        if(data.code==200){
+            var year = $("#select_year").val();
+            var week = $("#select_week").val();
+            list_init(year,week);
+            $('#updateDailyReport').modal('close')
+            console.log('close')
+        }else if(data.code==2){
+            alert('您已经提交过');
+        }else{
+            alert('操作失败，请重试...');
+        }
+    })
+    .fail(function(data) {   
+        alert('操作失败，请重试...');      
+    });
+});
+
+//查询
+$("#search").click(function(){
+    var year = $("#select_year").val();
+    var week = $("#select_week").val();
+    list_init(year,week);
+})
+
+$(document).ready(function(){
+    var $select_li = $("#select_year").next().find('li');
+    $select_li.click(function(){
+        var year = $(this).data('value');
+        weeklist_init(year)
+    })
+})
+
+if($(window).width()<500){
+    $(".admin-content").css('width','100%')
+};
+</script>
+{% endblock %}

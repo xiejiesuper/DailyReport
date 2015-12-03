@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+  <meta charset="UTF-8">
+  <title>登录</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/amazeui.min.css') }}"/>
+  <style>
+    .header {
+      text-align: center;
+    }
+    .header h1 {
+      font-size: 200%;
+      color: #333;
+      margin-top: 30px;
+    }
+    .header p {
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+<div class="header">
+  <div class="am-g">
+    <h1>工作日志</h1>
+    <p>记录生活点滴</p>
+  </div>
+  <hr />
+</div>
+<div class="am-g">
+  <div class="am-u-lg-3 am-u-md-3 am-u-sm-centered">
+
+    <form method="post" class="am-form" action="{{ url_for('account.login')}}">
+    {{ form.csrf_token }}
+       <div class="am-form-group am-form-icon">
+        <i class="am-icon-user"></i>
+        {{ form.name(placeholder='请输入用户名',class='am-form-field')}}
+      </div>
+       <br />
+      <div class="am-form-group am-form-icon">
+        <i class="am-icon-unlock-alt"></i>
+        {{ form.password(size=10,placeholder='请输入用户名密码',class='am-form-field')}}
+      </div>
+      <br />
+      <div class="am-cf">
+        <input type="submit" name="" value="登 录" class="am-btn am-btn-primary am-btn-sm am-center">
+      </div>
+    </form>
+    <hr>
+     {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul class=flashes>
+        {% for message in messages %}
+        <div class="am-alert am-alert-warning" data-am-alert>
+         {{ message }}
+        </div>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+    <p>Copyright 2014 Hisense Group All Rights Reserved.</p>
+  </div>
+</div>
+</body>
+</html>

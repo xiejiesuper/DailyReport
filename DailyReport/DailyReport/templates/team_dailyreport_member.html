@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block css_link %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}"/>
+{% endblock %}
+{% block css %}
+.am-accordion-default{-webkit-box-shadow:0 0 0 0px rgba(0,0,0,.1);}
+.admin-content .am-accordion-item dt.am-accordion-title{color:#0e90d2;}
+div.admin-content{min-height:510px;}
+{% endblock %}  
+
+{% block content %}
+{% include "team_siderbar.html" %}
+
+<div class="admin-content">
+    <div>
+        选择人员<select id="member" data-am-selected="{btnWidth: '12rem', btnSize: 'sm', btnStyle: 'secondary',maxHeight: 500}">
+            <option value="null">edrbger</option>
+          {% for i in infos %}
+                  <optgroup label="{{i[0]}}">{{infos.i}}
+                  {% for j in i[1] %}
+                      <option value="{{j[0]}}">{{j[1]}}</option>
+                  {% endfor %}
+                  </optgroup>
+          {% endfor %}
+        </select>
+        <select data-am-selected="{btnWidth: '7rem', btnSize: 'sm', btnStyle: 'success',}" id="select_year">
+            {%for i in range(2015,year+1)%}
+            <option value="{{i}}" >{{i}}年</option>
+            {%endfor%}
+        </select>
+        <select data-am-selected="{btnWidth: '17rem', btnSize: 'sm', btnStyle: 'success',maxHeight: 500}" id="select_week">
+        </select>
+        <button class="am-btn am-btn-secondary" style="display:inline-block;padding:5px 8px;" id="search">
+            查 询
+        </button>
+        <p id="name" style="font-size:24px;margin-left:10px;"></p>
+         <section  data-am-widget="accordion" class="am-accordion am-accordion-default" data-am-accordion='{ "multiple": true }' id="dailyReportList"></section> 
+    </div>
+</div>
+{% raw %}
+<script id="dailylist_template" type="text/x-dot-template">
+    {{~it:value:index}}
+        {{? value.content }}
+        <dl class="am-accordion-item" style="margin-bottom:30px;border:1px solid #DEDEDE;">
+        {{??}}
+        <dl class="am-accordion-item" style="margin-bottom:30px;border:1px solid #FF6666;">
+        {{?}}
+        <dt class="am-accordion-title" style="background:rgba(0,0,0,.1);">
+        <span style="color:#0e90d2;">{{!value.date}}  (周{{!value.week}})</span>
+        </dt>
+        {{? value.content }}
+        <dd class="am-accordion-bd am-collapse am-in">
+            <pre style="margin:0;border:none;" class="am-accordion-content">{{!value.content}}</pre>
+        </dd>
+        {{?}}
+    </dl>
+    {{~}}
+</script>
+{% endraw %}
+
+{% endblock %}
+
+
+{% block js %}
+<script src="{{ url_for('static', filename='js/util.js') }}"></script>
+<script>
+var weeklist_init = function(year){
+    $.getJSON("/user/getDatesOfWeek/"+year,function(resp){
+        var data = resp.data,html = [];
+        for(var i=0,l=data.length;i<l;i++){
+            var temp = '<option value="'+data[i].index+'">'+data[i].data+'</option>';
+            html.unshift(temp);
+        }
+        var html_str = html.join('');
+        var $selected = $('#select_week');
+        $selected.html(html_str);
+        if (!$.AMUI.support.mutationobserver) {
+          $selected.trigger('changed.selected.amui');
+        }
+    });
+}
+
+//查询
+$("#search").click(function(){
+    var id = $("#member").val();
+    var year = $("#select_year").val();
+    var week = $("#select_week").val();
+    var name = $("#member option[value='"+id+"']").text();
+    if(id=="null"){
+        alert("请选择人员")
+    }else{
+        if(id&&year&&week){
+            $.getJSON("{{ url_for('admin.getDailyReport')}}"+"?year="+year+"&index="+week+"&uid="+id,function(data){
+                var week = ['一','二','三','四','五','六','日']
+                var dataEval = data.data;
+                for(var i=0;i<dataEval.length;i++){
+                    dataEval[i]['week'] = week[dataEval[i]['week']-1]
+                }
+                var evalText = doT.template($("#dailylist_template").text());
+                $("#dailyReportList").html(evalText(dataEval));
+                $("#name").text(name);
+                $.AMUI.accordion.init();
+            })
+        }else{
+             alert("请确认人员与时间都已选择")
+        }
+    }
+})
+$(function() {
+   weeklist_init({{year}});
+})
+</script>
+{% endblock %}

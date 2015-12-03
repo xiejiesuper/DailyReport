@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block css_link %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}"/>
+{% endblock %}
+{% block css %}
+.am-tabs-nav li {position: relative;z-index: 1;}
+.am-tabs-nav .am-icon-close {position: absolute;top: 0;right: 10px;color: #888;cursor: pointer;z-index: 100;}
+.am-tabs-nav .am-icon-close:hover {color: #333;}
+.am-tabs-nav .am-icon-close ~ a {padding-right: 25px!important;}
+
+.am-btn{padding:5px;border-radius:5px;}
+.operation button{padding:7px 10px;}
+form .required{color:red;}
+.mt20{margin-top:20px;}
+.hide{display:none;}
+
+.teams{margin:0;border-top:2px solid #0f9ae0;color:#0E90D2;}
+#daily-main ul{list-style:none;display:inline-block;}
+#daily-main ul li{float:left;margin-left:10px;line-height:35px;cursor:pointer;}
+{% endblock %}
+
+
+{% block content %}
+{% include "admin/siderbar.html" %}
+
+<div class="admin-content" id="admin-content">
+    <div id="daily-main" style="width:90%;margin:0 auto;">
+        <div class="teams">
+            <ul>
+                <li style="font-size:22px;" onclick="getDaily('all','{{today}}')">查看所有</li>
+                {% for i in teams %}
+                    <li onclick="getDaily('{{i.id}}','{{today}}')">{{i.name}}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div>
+            <div style="width:250px;margin:0px auto;">
+                <p style="width:140px;display:inline-block;">
+                    <input type="text" class="am-form-field mydatepicker" placeholder="选择日期" value="{{today}}" readonly="" id="datepicker">
+                </p>
+                <button data-team="all" class="am-btn am-btn-secondary search" style="display:inline-block;" id="search">
+                    查询
+                </button>
+            </div>
+            <hr data-am-widget="divider" class="am-divider am-divider-default am-no-layout">
+            <p style="margin-top:20px;margin-left:20px;"><span style="font-weight:bold;font-size:18px;"><span id="flag"></span>:&nbsp;&nbsp;</span><span id="members"></span></p>
+            <hr data-am-widget="divider" class="am-divider am-divider-default am-no-layout">
+            <p style="margin-left:20px;color:#0000FF;font-size:18px;" id="search_date">2015-11-19 (周六)</p>
+            <section data-am-widget="accordion" class="am-accordion am-accordion-default am-no-layout" data-am-accordion="{ &quot;multiple&quot;: true }" id="dailylist">   <dl class="am-accordion-item" style="margin-bottom:30px;border:1px solid #FF6666;">  <dt class="am-accordion-title" style="background:rgba(0,0,0,.1);"> 许焕杰 </dt>  </dl>
+            </section>
+        </div>
+    </div>
+</div>
+<!-- modal start -->
+<!-- modal end -->
+<!-- tempalte start -->
+{% raw %}
+<script id="dailylist_template" type="text/x-dot-template">
+    {{~it:value:index}}
+        {{? value.content }}
+        <dl class="am-accordion-item" style="margin-bottom:30px;border:1px solid #DEDEDE;">
+        {{??}}
+        <dl class="am-accordion-item" style="margin-bottom:30px;border:1px solid #FF6666;">
+        {{?}}
+        <dt class="am-accordion-title" style="background:rgba(0,0,0,.1);">
+        {{!value.name}}  ({{!value.team}})
+        </dt>
+        {{? value.content }}
+        <dd class="am-accordion-bd am-collapse am-in">
+            <pre style="margin:0;border:none;" class="am-accordion-content">{{!value.content}}</pre>
+        </dd>
+        {{?}}
+    </dl>
+    {{~}}
+</script>
+{% endraw %}
+<!-- tempalte end -->
+
+
+{% endblock %}
+
+{% block js %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/util.js') }}"></script>
+<script>
+//获取日报列表
+function getDaily(team, date){
+    console.log(date)
+    var tuple = date.split('-');
+    var dt = new Date(tuple[0],tuple[1]-1,tuple[2]);
+    var week = ['周日','周一','周二','周三','周四','周五','周六'][dt.getDay()];
+    var _date = date;
+    var str = date; 
+    str = str.replace(/-/g,'/'); 
+    var date = new Date(str);
+    var time = date.getTime()/1000;
+    $.getJSON("/admin/daily?team="+team+"&date="+time, function(resp){
+        var dataEval = resp.data;
+        var evalText = doT.template($("#dailylist_template").text());
+        $("#dailylist").html(evalText(dataEval.data));
+        $("#datepicker").val(_date);
+        $("#flag").text(dataEval.flag);
+        $("#members").text(dataEval.members.join('，'));
+        $("#search_date").text(_date+"("+week+")");
+        $("#search").data('team', team);
+        $.AMUI.accordion.init();
+    })
+    
+}
+
+$("#search").on('click', function(){
+    var team = $(this).data('team');
+    var date = $("#datepicker").val();
+    getDaily(team, date);
+})      
+$(function() {
+    //init 
+    var nowTemp = new Date();
+    var now = new Date(nowTemp.getFullYear(), nowTemp.getMonth(), nowTemp.getDate(), 0, 0, 0, 0);
+    var $myStart2 = $('.mydatepicker');
+    var checkin = $myStart2.datepicker({
+      onRender: function(date) {
+        return date.valueOf() > now.valueOf() ? 'am-disabled' : '';
+      }
+    }).on('changeDate.datepicker.amui', function(ev) {
+        checkin.close();
+    }).data('amui.datepicker');
+    getDaily('all', '{{today}}');
+}) 
+
+</script>
+{% endblock %}
+
+

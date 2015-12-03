@@ -1,0 +1,20 @@
+<!-- sidebar start -->
+  <div class="admin-sidebar am-offcanvas" id="admin-offcanvas">
+    <div class="am-offcanvas-bar admin-offcanvas-bar">
+      <ul class="am-list admin-sidebar-list">
+        <li><a href="{{url_for('user.dailyreport_team')}}"><span class="am-icon-bars"></span>按部门查看</a></li>
+        <li><a href="{{url_for('user.dailyreport_team_member')}}"><span class="am-icon-user"></span>按人员查看</a></li>
+      </ul>
+
+      <div class="am-panel am-panel-default admin-sidebar-panel">
+        <div class="am-panel-bd">
+          <p><span class="am-icon-tag"></span> wiki</p>
+          <p>Welcome!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <a href="#" class="am-show-sm-only admin-menu" data-am-offcanvas="{target:'#admin-offcanvas'}" style="z-index:999;">
+  <span class="am-icon-btn am-icon-th-list"></span>
+  </a>
+  <!-- sidebar end -->

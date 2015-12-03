@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block css_link %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}"/>
+{% endblock %}
+{% block css %}
+.am-accordion-default{-webkit-box-shadow:0 0 0 0px rgba(0,0,0,.1);}
+.admin-content .am-accordion-item dt.am-accordion-title{color:#0e90d2;}
+{% endblock %}  
+
+{% block content %}
+<p style="width:300px;margin:10px auto;display:{{display}}" id="tttt">暂时没人向您汇报日报</p>
+{% include "team_siderbar.html" %}
+
+<div class="admin-content">
+    <div class="am-tabs" data-am-tabs="{noSwipe: 1}">
+         <ul class="am-tabs-nav am-nav am-nav-tabs" id="tags">
+            {% for i in data.team %}
+               <li><a href="#tab{{loop.index}}">{{i}}</a></li>
+            {% endfor %}   
+        </ul>
+        <div class="am-tabs-bd">
+        {% for i in data.content %}
+            <div class="am-tab-panel" id="tab{{loop.index}}">
+                <div style="width:250px;margin:10px auto;">
+                    <p style="width:140px;display:inline-block;">
+                        <input type="text"  class="am-form-field mydatepicker" placeholder="选择日期" value="{{today}}" readonly/>
+                    </p>
+                    <button data-index="{{loop.index}}" class="am-btn am-btn-secondary search" style="display:inline-block;">
+                        查询
+                    </button>
+                </div>
+                <hr data-am-widget="divider" class="am-divider am-divider-default"/>
+                <p style="margin-top:20px;margin-left:20px;"><span style="font-weight:bold;font-size:18px;">汇报人:&nbsp;&nbsp;</span>{{i|members}}</p>
+                <hr data-am-widget="divider" class="am-divider am-divider-default" />
+                <p style="margin-left:20px;color:#0000FF;font-size:18px;" class="search_date">{{today}} ({{week|week}})</p>
+                <section data-am-widget="accordion" class="am-accordion am-accordion-default" data-am-accordion='{ "multiple": true }'>
+                    {% for j in i %}
+                    {% if j[1] %}
+                    <dl class="am-accordion-item" style="margin-bottom:30px;border:1px solid #DEDEDE;">
+                    {%else%}
+                    <dl class="am-accordion-item" style="margin-bottom:30px;border:1px solid #FF6666;">
+                    {% endif %}
+                        <dt class="am-accordion-title" style="background:rgba(0,0,0,.1);">
+                        {{j[0]}}
+                        </dt>
+                        <dd class="am-accordion-bd am-collapse am-in">
+                          {% if j[1] %}
+                              <pre style="margin:0;border:none;" class="am-accordion-content">{{j[1]|escape}}</pre>
+                          {% endif %}
+                        </dd>
+                     </dl>
+                     {% endfor %}
+                </section>
+            </div>
+        {% endfor %}
+        </div>
+    </div>
+</div>
+{% raw %}
+<script id="list_template" type="text/x-dot-template">
+    {{~it:value:index}}
+        {{? value[1] }}
+        <dl class="am-accordion-item" style="margin-bottom:30px;border:1px solid #DEDEDE;">
+        {{??}}
+        <dl class="am-accordion-item" style="margin-bottom:30px;border:1px solid #FF6666;">
+        {{?}}
+        <dt class="am-accordion-title" style="background:rgba(0,0,0,.1);">
+        {{!value[0]}}
+        </dt>
+        {{? value[1] }}
+        <dd class="am-accordion-bd am-collapse am-in">
+            <pre style="margin:0;border:none;" class="am-accordion-content">{{!value[1]}}</pre>
+        </dd>
+        {{?}}
+    </dl>
+    {{~}}
+</script>
+{% endraw %}
+
+{% endblock %}
+
+
+{% block js %}
+<script src="{{ url_for('static', filename='js/util.js') }}"></script>
+<script>
+$(".search").click(function(){
+    var that = $(this);
+    var index = $(this).data('index')-1;
+    var date = $(this).parent().find('input').val();
+    var team= $("#tags>li").eq(index).text()
+    $.ajax({
+          url:  "/user/dailyreport/team/"+team,
+          type: 'get',
+          dataType: 'json',
+          data: {date:date},
+    })
+    .done(function(data) {
+        if(data.code==200){
+            //$("#tab"+(index+1)+' section').html('dvsdf');
+            var tuple = date.split('-');
+            var dt = new Date(tuple[0],tuple[1]-1,tuple[2]);
+            console.log(dt)
+            console.log(dt.getDay())
+            var week = ['周日','周一','周二','周三','周四','周五','周六'][dt.getDay()];
+            var dataEval = data.data.content;
+            var evalText = doT.template($("#list_template").text());
+            $("#tab"+(index+1)+' section').html(evalText(dataEval));
+            that.parent().parent().find(".search_date").text(date+' ('+week+')');
+            $.AMUI.accordion.init();
+        }else{
+            alert('操作失败，请重试...');
+        }
+    })
+    .fail(function(data) {   
+        alert('操作失败，请重试...');      
+    });
+    
+})    
+    
+$(function() {
+    var nowTemp = new Date();
+    var now = new Date(nowTemp.getFullYear(), nowTemp.getMonth(), nowTemp.getDate(), 0, 0, 0, 0);
+    var $myStart2 = $('.mydatepicker');
+    if($("#tttt").css("display")=="block"){
+        $("#admin-offcanvas").remove();
+    }
+    var checkin = $myStart2.datepicker({
+      onRender: function(date) {
+        return date.valueOf() > now.valueOf() ? 'am-disabled' : '';
+      }
+    }).on('changeDate.datepicker.amui', function(ev) {
+        checkin.close();
+    }).data('amui.datepicker');
+
+})
+</script>
+{% endblock %}
